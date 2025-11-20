@@ -57,11 +57,84 @@ Note: Keep all the switch faults in off position
 <img width="747" height="338" alt="image" src="https://github.com/user-attachments/assets/dd117c5d-ee32-47c7-946c-df6180b0d33f" />
 
 ## PROGRAM
+clc;
+clear;
+close;
 
+
+Am = 8.8; 
+Ac = 17.6; 
+fm = 863; 
+fc = 8630; 
+fs = 863000; 
+t = 0:1/fs:2/fm;
+m1 = Am * cos(2 * %pi * fm * t);
+c1 = Ac * cos(2 * %pi * fc * t);
+s1 = c1 .* m1;
+
+
+m2 = Am * cos(1.57 - (2 * %pi * fm * t));
+c2 = Ac * cos(1.57 - (2 * %pi * fc * t));
+
+subplot(5,1,1);
+plot(t, m1);
+xtitle("Message Signal", "Time (s)", "Amplitude");
+
+subplot(5,1,2);
+plot(t, c1);
+xtitle("Carrier Signal", "Time (s)", "Amplitude");
+
+s2 = c2 .* m2;
+lsb = s1 + s2;
+usb = s1 - s2;
+
+subplot(5,1,3);
+plot(t, lsb);
+xtitle("Lower Sideband (SSB-LSB)", "Time (s)", "Amplitude");
+
+subplot(5,1,4);
+plot(t, usb);
+xtitle("Upper Sideband (SSB-USB)", "Time (s)", "Amplitude");
+
+
+ssb_signal = usb;
+
+
+demod = ssb_signal .* cos(2 * %pi * fc * t);
+demod = demod / (Ac / 2); 
+
+fc_cut = 2 * fm;
+N = 101;
+M = (N-1)/2;
+n = 0:N-1;
+
+
+function y = mysinc(x)
+    y = zeros(x);
+    for i = 1:length(x)
+        if x(i) == 0 then
+            y(i) = 1;
+        else
+            y(i) = sin(%pi * x(i)) / (%pi * x(i));
+        end
+    end
+endfunction
+
+
+h = (2 * fc_cut / fs) * mysinc(2 * fc_cut * (n - M) / fs);
+w = 0.54 - 0.46 * cos(2 * %pi * n / (N - 1));
+h = h .* w;
+h = h / sum(h);
+recovered = filter(h, 1, demod);
+
+subplot(5,1,5);
+plot(t, recovered, 'r');
+xtitle("Recovered Message Signal (After LPF)", "Time (s)", "Amplitude");
 ## TABULATION
+<img width="473" height="469" alt="image" src="https://github.com/user-attachments/assets/9fe47bbf-927a-4cab-9639-7df7415cb708" />
 
 ## OUTPUT
+<img width="1536" height="801" alt="image" src="https://github.com/user-attachments/assets/e06367fd-aacf-4ef5-b478-4f4efef9db6f" />
 
 ## RESULT
-
-
+Thus, the SSB-AM Modulation and Demodulation is experimentally done and the output is verified.
